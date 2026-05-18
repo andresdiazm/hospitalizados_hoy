@@ -1,0 +1,927 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reporte Hospitalizados — HSJ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Public+Sans:ital,wght@0,300..800;1,400..700&family=JetBrains+Mono:wght@400..700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --chsj-blue: #0061BE; --chsj-red: #E51D2F; --chsj-white: #FFFFFF;
+  --blue-50: #EFF5FC; --blue-100: #DBE8F7; --blue-200: #B6D1EE;
+  --blue-300: #84B3E2; --blue-400: #4A8FD2; --blue-500: #1F73C5;
+  --blue-600: #0061BE; --blue-700: #0052A0; --blue-800: #034485;
+  --blue-900: #073764; --blue-950: #051F3B;
+  --red-50: #FDEEEF; --red-100: #FBD8DB; --red-200: #F6B0B6;
+  --red-300: #EF7E88; --red-400: #EB4F5D; --red-500: #E62E3F;
+  --red-600: #E51D2F; --red-700: #C21422; --red-800: #9A111C;
+  --ink-50: #F7F8FB; --ink-100: #EEF1F6; --ink-200: #DCE2EC;
+  --ink-300: #BFC8D6; --ink-400: #94A0B4; --ink-500: #6B7689;
+  --ink-600: #4D5667; --ink-700: #364052; --ink-800: #232C3D;
+  --ink-900: #131A28; --ink-950: #0A1018;
+  --ok: #1F8A5B; --ok-bg: #E5F4ED;
+  --warn: #B8770E; --warn-bg: #FBF1DC;
+  --danger: #E51D2F; --danger-bg: #FBE3E5;
+  --info-bg: #EFF5FC;
+  --bg: #FFFFFF; --bg-soft: #F7F8FB;
+  --fg: #131A28; --fg-2: #364052; --fg-3: #6B7689;
+  --border: #DCE2EC; --border-strong: #BFC8D6;
+  --accent: #0061BE;
+  --radius-1: 4px; --radius-2: 8px; --radius-3: 12px;
+  --radius-4: 16px; --radius-pill: 999px;
+  --shadow-1: 0 1px 2px rgba(7,22,50,.04), 0 1px 1px rgba(7,22,50,.03);
+  --shadow-2: 0 2px 6px rgba(7,22,50,.06), 0 1px 2px rgba(7,22,50,.04);
+  --shadow-3: 0 8px 24px rgba(7,22,50,.08), 0 2px 6px rgba(7,22,50,.04);
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-sans: "Public Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --t-base: 200ms;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+[hidden] { display: none !important; }
+
+/* ── Upload state ─────────────────────────────────────── */
+#upload-state {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: var(--bg-soft);
+  padding: 24px;
+}
+.upload-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-4);
+  padding: 48px 40px;
+  max-width: 520px; width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-2);
+}
+.logo-img { width: 64px; height: 64px; margin: 0 auto 20px; display: block; }
+.upload-card h1 {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 600;
+  color: var(--fg); margin: 0 0 6px;
+}
+.upload-card > p {
+  font-size: 14px; color: var(--fg-3); margin: 0 0 28px;
+}
+.drop-zone {
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-3);
+  padding: 36px 24px;
+  cursor: pointer;
+  transition: border-color var(--t-base), background var(--t-base);
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--chsj-blue);
+  background: var(--blue-50);
+}
+.drop-zone input[type="file"] {
+  position: absolute; inset: 0;
+  opacity: 0; cursor: pointer;
+  width: 100%; height: 100%;
+}
+.drop-icon { width: 40px; height: 40px; color: var(--fg-3); margin: 0 auto 12px; display: block; }
+.drop-zone p { margin: 0; font-size: 14px; color: var(--fg-3); }
+.drop-zone strong { color: var(--chsj-blue); font-weight: 600; }
+.upload-hint { font-size: 12px; color: var(--fg-3); margin: 12px 0 0; }
+
+/* ── Header ───────────────────────────────────────────── */
+#app-header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,255,255,.9);
+  backdrop-filter: saturate(180%) blur(8px);
+  -webkit-backdrop-filter: saturate(180%) blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; height: 56px;
+  display: flex; align-items: center; gap: 12px;
+}
+.header-logo { width: 36px; height: 36px; flex-shrink: 0; }
+.header-title {
+  font-family: var(--font-display);
+  font-size: 16px; font-weight: 600;
+  color: var(--fg); line-height: 1.2;
+}
+.header-badge {
+  margin-left: auto;
+  background: var(--blue-50); color: var(--blue-800);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: var(--radius-pill);
+}
+
+/* ── Main ─────────────────────────────────────────────── */
+#report-main {
+  max-width: 1280px; margin: 0 auto;
+  padding: 32px 24px 100px;
+}
+
+/* ── KPI Grid ─────────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px; margin-bottom: 32px;
+}
+.kpi-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-3);
+  padding: 20px; box-shadow: var(--shadow-1);
+}
+.kpi-eyebrow {
+  font-size: 11px; letter-spacing: .10em;
+  text-transform: uppercase; font-weight: 600;
+  color: var(--fg-3); margin: 0 0 8px;
+}
+.kpi-value {
+  font-family: var(--font-display);
+  font-size: 40px; font-weight: 600;
+  line-height: 1; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+  margin: 0 0 4px; color: var(--chsj-blue);
+}
+.kpi-value.red { color: var(--chsj-red); }
+.kpi-value.dark { color: var(--fg); }
+.kpi-unit { font-size: 20px; font-weight: 400; color: var(--fg-3); }
+.kpi-label { font-size: 13px; color: var(--fg-3); margin: 0; }
+
+/* ── Tabs ─────────────────────────────────────────────── */
+.tabs {
+  display: flex; gap: 2px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid var(--border);
+}
+.tab-btn {
+  font-family: var(--font-sans);
+  font-size: 14px; font-weight: 500;
+  color: var(--fg-3); background: transparent;
+  border: none; border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: 10px 16px; cursor: pointer;
+  transition: color var(--t-base), border-color var(--t-base);
+}
+.tab-btn:hover { color: var(--fg); }
+.tab-btn.active { color: var(--chsj-blue); font-weight: 600; border-bottom-color: var(--chsj-blue); }
+
+/* ── Section card ─────────────────────────────────────── */
+.section-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-3);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+.section-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 15px; font-weight: 600;
+  color: var(--fg); margin: 0;
+}
+
+/* ── Filter chips ─────────────────────────────────────── */
+.filter-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  font-family: var(--font-sans);
+  font-size: 12px; font-weight: 500;
+  color: var(--fg); background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 5px 12px; cursor: pointer;
+  transition: all var(--t-base);
+}
+.chip:hover { border-color: var(--chsj-blue); color: var(--chsj-blue); }
+.chip.active { background: var(--chsj-blue); color: #fff; border-color: var(--chsj-blue); }
+
+/* ── Chart ────────────────────────────────────────────── */
+.chart-wrap { padding: 20px; }
+
+/* ── Table ────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+thead th {
+  font-size: 11px; letter-spacing: .10em; text-transform: uppercase;
+  font-weight: 600; color: var(--fg-3);
+  background: var(--ink-50);
+  border-bottom: 1.5px solid var(--ink-200);
+  padding: 9px 12px; text-align: left; white-space: nowrap;
+}
+thead th.num { text-align: right; }
+tbody td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg); vertical-align: middle;
+}
+tbody td.num { text-align: right; font-family: var(--font-mono); }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--ink-50); }
+
+/* ── Badges ───────────────────────────────────────────── */
+.badge {
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: var(--radius-pill);
+  display: inline-block; white-space: nowrap;
+}
+.badge-critica { background: var(--info-bg);  color: var(--blue-800); }
+.badge-materno { background: var(--ok-bg);   color: var(--ok); }
+.badge-general { background: var(--ink-100); color: var(--ink-700); }
+.badge-ok      { background: var(--ok-bg);   color: var(--ok); }
+.badge-warn    { background: var(--warn-bg);  color: var(--warn); }
+.badge-danger  { background: var(--danger-bg); color: var(--red-700); }
+
+/* ── Export button ────────────────────────────────────── */
+#btn-export {
+  position: fixed; bottom: 24px; right: 24px; z-index: 200;
+  font-family: var(--font-sans);
+  font-size: 14px; font-weight: 600;
+  color: #fff; background: var(--chsj-blue);
+  border: none; border-radius: var(--radius-pill);
+  padding: 12px 20px; cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  box-shadow: var(--shadow-3);
+  transition: background var(--t-base), transform var(--t-base);
+}
+#btn-export:hover { background: var(--blue-700); transform: translateY(-1px); }
+#btn-export svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE — MÓVIL
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+
+  /* Upload */
+  .upload-card { padding: 32px 20px; }
+  .logo-img { width: 52px; height: 52px; margin-bottom: 14px; }
+
+  /* Header: title compacto, badge oculto */
+  #app-header { padding: 0 14px; gap: 10px; }
+  .header-title { font-size: 13px; line-height: 1.3;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .header-badge { display: none; }
+
+  /* Main */
+  #report-main { padding: 16px 12px 90px; }
+
+  /* KPI: 2 columnas */
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 20px;
+  }
+  .kpi-card { padding: 14px 12px; }
+  .kpi-value { font-size: 30px; }
+  .kpi-unit  { font-size: 16px; }
+  .kpi-label { font-size: 11px; }
+  /* El primer card (N° casos) ocupa ancho completo */
+  .kpi-grid .kpi-card:first-child { grid-column: 1 / -1; }
+
+  /* Tabs: botones iguales */
+  .tabs { gap: 0; }
+  .tab-btn { flex: 1; text-align: center; font-size: 13px; padding: 10px 8px; }
+
+  /* Section header: chips en fila propia */
+  .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .filter-chips { width: 100%; }
+
+  /* Chart: altura limitada en móvil */
+  .chart-wrap { padding: 12px; }
+  #chart-servicios { max-height: 260px !important; }
+
+  /* Tablas: scroll horizontal suave */
+  .table-wrap { -webkit-overflow-scrolling: touch; }
+  table { font-size: 12px; }
+  thead th, tbody td { padding: 7px 8px; }
+  thead th { font-size: 10px; }
+
+  /* Export button: ancho completo en la parte inferior */
+  #btn-export {
+    bottom: 0; right: 0; left: 0;
+    border-radius: 0;
+    justify-content: center;
+    padding: 14px 20px;
+    border-top: 1px solid var(--blue-700);
+  }
+
+  /* Footer: espacio extra para el botón fijo */
+  #app-footer { padding-bottom: 60px; }
+}
+
+@media (max-width: 400px) {
+  /* KPI: 1 columna en pantallas muy pequeñas */
+  .kpi-grid { grid-template-columns: 1fr; }
+  .kpi-grid .kpi-card:first-child { grid-column: auto; }
+  .kpi-value { font-size: 36px; }
+}
+
+/* ── Footer ───────────────────────────────────────────── */
+#app-footer {
+  background: var(--ink-900);
+  color: rgba(255,255,255,.6);
+  text-align: center; font-size: 12px;
+  padding: 16px 24px; letter-spacing: .04em;
+}
+#app-footer strong { color: rgba(255,255,255,.9); }
+</style>
+</head>
+<body>
+
+<!-- ═══ UPLOAD STATE ════════════════════════════════════════════ -->
+<div id="upload-state">
+  <div class="upload-card">
+    <img class="logo-img" id="logo-upload" alt="Logo Hospital San José">
+    <h1>Reporte Hospitalizados</h1>
+    <p>Hospital San José — Gestión Clínica</p>
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" id="file-input" accept=".xls,.xlsx">
+      <svg class="drop-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="12" y1="18" x2="12" y2="12"/>
+        <polyline points="9 15 12 12 15 15"/>
+      </svg>
+      <p><strong>Selecciona o arrastra</strong> el archivo Excel</p>
+    </div>
+    <p class="upload-hint">Ej: Hospitalizados 18-5-2026.xls / .xlsx</p>
+  </div>
+</div>
+
+<!-- ═══ REPORT STATE ════════════════════════════════════════════ -->
+<div id="report-state" hidden>
+
+  <header id="app-header">
+    <img class="header-logo logo-img" id="logo-header" alt="Logo HSJ">
+    <div class="header-title" id="header-title">Reporte casos hospitalizados al —</div>
+    <span class="header-badge">HSJ</span>
+  </header>
+
+  <main id="report-main">
+
+    <!-- KPIs -->
+    <div class="kpi-grid" id="kpi-grid"></div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="servicio">Por Servicio</button>
+      <button class="tab-btn" data-tab="diagnostico">Por Diagnóstico</button>
+    </div>
+
+    <!-- ── Tab: Por Servicio ─────────────────────────────────── -->
+    <div id="tab-servicio">
+
+      <div class="section-card" style="margin-bottom:20px">
+        <div class="section-header">
+          <span class="section-title">Distribución por servicio</span>
+          <div class="filter-chips" style="margin-left:auto">
+            <button class="chip active" data-filter="all">Todos</button>
+            <button class="chip" data-filter="critica">Cama Crítica</button>
+            <button class="chip" data-filter="materno">Materno Fetal</button>
+            <button class="chip" data-filter="general">Cama General</button>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chart-servicios"></canvas>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">Indicadores por servicio</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Servicio</th>
+                <th>Tipo</th>
+                <th class="num">N° casos</th>
+                <th class="num">Med. estadía hosp.</th>
+                <th class="num">Med. estadía serv.</th>
+                <th class="num">% &gt; 30 días</th>
+                <th class="num">% &gt; 10 días</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-servicios"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /tab-servicio -->
+
+    <!-- ── Tab: Por Diagnóstico ──────────────────────────────── -->
+    <div id="tab-diagnostico" hidden>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">Indicadores por diagnóstico principal</span>
+          <span style="font-size:12px;color:var(--fg-3);margin-left:auto">Top 10 + Otros</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Diagnóstico</th>
+                <th class="num">N° casos</th>
+                <th class="num">Med. estadía hosp.</th>
+                <th class="num">Med. estadía serv.</th>
+                <th class="num">% &gt; 30 días</th>
+                <th class="num">% &gt; 10 días</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-diagnosticos"></tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /tab-diagnostico -->
+
+  </main>
+
+  <footer id="app-footer">
+    <strong>Gestión Clínica</strong> — Hospital San José
+  </footer>
+
+</div><!-- /report-state -->
+
+<!-- ═══ EXPORT BUTTON ══════════════════════════════════════════ -->
+<button id="btn-export" hidden>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="7 10 12 15 17 10"/>
+    <line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+  Exportar HTML
+</button>
+
+<!-- ═══ SCRIPTS ════════════════════════════════════════════════ -->
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+'use strict';
+
+// ─── Logo ──────────────────────────────────────────────────────
+const LOGO_B64 = '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';
+document.querySelectorAll('.logo-img').forEach(el =>
+  el.setAttribute('src', 'data:image/png;base64,' + LOGO_B64)
+);
+
+// ─── State ─────────────────────────────────────────────────────
+const APP = { data: null, activeFilter: 'all', chart: null };
+
+// ─── Helpers ───────────────────────────────────────────────────
+function parseDays(val) {
+  if (val === null || val === undefined || val === '') return null;
+  const m = String(val).match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function median(arr) {
+  const a = arr.filter(x => x !== null && !isNaN(x)).sort((a, b) => a - b);
+  if (!a.length) return null;
+  const mid = Math.floor(a.length / 2);
+  return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
+}
+
+function classifyService(name) {
+  const u = String(name || '').toUpperCase();
+  if (u.includes('UCI') || u.includes('UTI') || u.includes('UPC') ||
+      u.includes('CORONARIA'))
+    return 'critica';
+  if (u.includes('GINECOLOG') || u.includes('MATERNIDAD') || u.includes('NEONATOL'))
+    return 'materno';
+  return 'general';
+}
+
+function tipoLabel(tipo) {
+  return tipo === 'critica' ? 'Cama Crítica'
+       : tipo === 'materno' ? 'Materno Fetal'
+       : 'Cama General';
+}
+
+function tipoColor(tipo) {
+  return tipo === 'critica' ? '#E51D2F'
+       : tipo === 'materno' ? '#1F8A5B'
+       : '#0061BE';
+}
+
+function computeMetrics(rows) {
+  const hosp = rows.map(r => r.estadaHospital).filter(d => d !== null);
+  const serv = rows.map(r => r.estadaServicio).filter(d => d !== null);
+  const total = hosp.length;
+  return {
+    n: rows.length,
+    medianHosp: median(hosp),
+    medianServ: median(serv),
+    pct30: total ? hosp.filter(d => d > 30).length / total * 100 : null,
+    pct10: total ? hosp.filter(d => d > 10).length / total * 100 : null,
+  };
+}
+
+function fmt(val, dec = 1) {
+  if (val === null || val === undefined) return '—';
+  return val.toFixed(dec).replace('.', ',');
+}
+function fmtPct(val) {
+  if (val === null || val === undefined) return '—';
+  return fmt(val, 1) + ' %';
+}
+
+function pctBadge(val, highThr = 30, midThr = 15) {
+  if (val === null || val === undefined) return '<span style="color:var(--fg-3)">—</span>';
+  const cls = val > highThr ? 'badge-danger' : val > midThr ? 'badge-warn' : 'badge-ok';
+  return '<span class="badge ' + cls + '">' + fmtPct(val) + '</span>';
+}
+function pct10Badge(val) { return pctBadge(val, 60, 35); }
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── Data processing ───────────────────────────────────────────
+function processWorkbook(wb, filename) {
+  const m = filename.match(/(\d{1,2})[^\d](\d{1,2})[^\d](\d{4})/);
+  const date = m
+    ? m[1].padStart(2,'0') + '/' + m[2].padStart(2,'0') + '/' + m[3]
+    : '';
+
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+  const rows = rawRows.map(r => ({
+    servicio:      String(r['Servicio_Perteneciente'] || '').trim(),
+    diagnostico:   String(r['Diagnostico'] || '').trim() || 'Sin diagnóstico',
+    estadaHospital: parseDays(r['Estada_Hospital']),
+    estadaServicio: parseDays(r['Estada_Servicio']),
+    tipo:           classifyService(r['Servicio_Perteneciente']),
+  }));
+
+  // Group by service
+  const svcMap = {};
+  rows.forEach(r => {
+    if (!r.servicio) return;
+    if (!svcMap[r.servicio]) svcMap[r.servicio] = { rows: [], tipo: r.tipo };
+    svcMap[r.servicio].rows.push(r);
+  });
+  const services = Object.entries(svcMap)
+    .map(([name, d]) => ({ name, tipo: d.tipo, ...computeMetrics(d.rows) }))
+    .sort((a, b) => b.n - a.n);
+
+  // Group by diagnosis — top 10 + Otros
+  const diagMap = {};
+  rows.forEach(r => {
+    if (!diagMap[r.diagnostico]) diagMap[r.diagnostico] = [];
+    diagMap[r.diagnostico].push(r);
+  });
+  const allDiags = Object.entries(diagMap)
+    .map(([name, rs]) => ({ name, ...computeMetrics(rs) }))
+    .sort((a, b) => b.n - a.n);
+  const top10 = allDiags.slice(0, 10);
+  if (allDiags.length > 10) {
+    const otherRows = allDiags.slice(10).flatMap(d => diagMap[d.name]);
+    top10.push({ name: 'Otros', ...computeMetrics(otherRows) });
+  }
+
+  return { date, global: computeMetrics(rows), services, diagnoses: top10 };
+}
+
+// ─── Render ────────────────────────────────────────────────────
+function renderKPIs(g) {
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi-card">
+      <p class="kpi-eyebrow">N° Casos hospitalizados</p>
+      <p class="kpi-value dark">${g.n}</p>
+      <p class="kpi-label">Pacientes en cama hoy</p>
+    </div>
+    <div class="kpi-card">
+      <p class="kpi-eyebrow">Mediana estadía hospital</p>
+      <p class="kpi-value">${fmt(g.medianHosp,0)}<span class="kpi-unit"> días</span></p>
+      <p class="kpi-label">Desde ingreso hospitalario</p>
+    </div>
+    <div class="kpi-card">
+      <p class="kpi-eyebrow">Mediana estadía servicio</p>
+      <p class="kpi-value">${fmt(g.medianServ,0)}<span class="kpi-unit"> días</span></p>
+      <p class="kpi-label">En el servicio actual</p>
+    </div>
+    <div class="kpi-card">
+      <p class="kpi-eyebrow">Estadía &gt; 30 días</p>
+      <p class="kpi-value${(g.pct30 || 0) > 15 ? ' red' : ''}">${fmtPct(g.pct30)}</p>
+      <p class="kpi-label">Del total de casos</p>
+    </div>
+    <div class="kpi-card">
+      <p class="kpi-eyebrow">Estadía &gt; 10 días</p>
+      <p class="kpi-value${(g.pct10 || 0) > 40 ? ' red' : ''}">${fmtPct(g.pct10)}</p>
+      <p class="kpi-label">Del total de casos</p>
+    </div>`;
+}
+
+function filteredServices() {
+  const f = APP.activeFilter;
+  if (f === 'all') return APP.data.services;
+  return APP.data.services.filter(s => s.tipo === f);
+}
+
+function renderChart(services) {
+  const ctx = document.getElementById('chart-servicios').getContext('2d');
+  if (APP.chart) APP.chart.destroy();
+
+  const colors = services.map(s =>
+    APP.activeFilter !== 'all' ? tipoColor(APP.activeFilter) : tipoColor(s.tipo)
+  );
+
+  APP.chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: services.map(s => s.name),
+      datasets: [{
+        data: services.map(s => s.n),
+        backgroundColor: colors,
+        borderRadius: 4,
+        borderSkipped: false,
+      }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: Math.max(1.2, 4 - services.length * 0.1),
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ' ' + c.raw + ' casos' } },
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: { color: '#EEF1F6' },
+          ticks: { font: { family: "'JetBrains Mono'", size: 11 }, color: '#6B7689' },
+        },
+        y: {
+          grid: { display: false },
+          ticks: { font: { family: "'Public Sans'", size: 12 }, color: '#364052' },
+        },
+      },
+    },
+  });
+}
+
+function renderServiciosTable(services) {
+  document.getElementById('tbody-servicios').innerHTML = services.map(s => `
+    <tr>
+      <td>${esc(s.name)}</td>
+      <td><span class="badge badge-${s.tipo}">${tipoLabel(s.tipo)}</span></td>
+      <td class="num">${s.n}</td>
+      <td class="num">${fmt(s.medianHosp,0)} d</td>
+      <td class="num">${fmt(s.medianServ,0)} d</td>
+      <td class="num">${pctBadge(s.pct30)}</td>
+      <td class="num">${pct10Badge(s.pct10)}</td>
+    </tr>`).join('');
+}
+
+function renderDiagnosticosTable() {
+  document.getElementById('tbody-diagnosticos').innerHTML =
+    APP.data.diagnoses.map(d => `
+      <tr>
+        <td>${esc(d.name)}</td>
+        <td class="num">${d.n}</td>
+        <td class="num">${fmt(d.medianHosp,0)} d</td>
+        <td class="num">${fmt(d.medianServ,0)} d</td>
+        <td class="num">${pctBadge(d.pct30)}</td>
+        <td class="num">${pct10Badge(d.pct10)}</td>
+      </tr>`).join('');
+}
+
+function updateServicioView() {
+  const svcs = filteredServices();
+  renderChart(svcs);
+  renderServiciosTable(svcs);
+}
+
+function showReport() {
+  document.getElementById('upload-state').hidden = true;
+  document.getElementById('report-state').hidden = false;
+  document.getElementById('btn-export').hidden = false;
+  document.getElementById('header-title').textContent =
+    'Reporte casos hospitalizados al ' + APP.data.date;
+  renderKPIs(APP.data.global);
+  renderDiagnosticosTable();
+  updateServicioView();
+}
+
+// ─── File handling ─────────────────────────────────────────────
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      APP.data = processWorkbook(wb, file.name);
+      showReport();
+    } catch (err) {
+      alert('Error al procesar el archivo:\n' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+document.getElementById('file-input').addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', ()  => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+// ─── Tab switching ─────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const t = btn.dataset.tab;
+    document.getElementById('tab-servicio').hidden    = (t !== 'servicio');
+    document.getElementById('tab-diagnostico').hidden = (t !== 'diagnostico');
+    if (t === 'servicio' && APP.data) updateServicioView();
+  });
+});
+
+// ─── Filter chips ──────────────────────────────────────────────
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    APP.activeFilter = chip.dataset.filter;
+    if (APP.data) updateServicioView();
+  });
+});
+
+// ─── Export ────────────────────────────────────────────────────
+document.getElementById('btn-export').addEventListener('click', () => {
+  const html = buildExportHTML(APP.data);
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = 'Reporte_Hospitalizados_' + APP.data.date.replace(/\//g, '-') + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 15000);
+});
+
+function buildExportHTML(data) {
+  const g = data.global;
+
+  const svcRows = data.services.map(s => `
+    <tr>
+      <td>${esc(s.name)}</td>
+      <td><span class="badge badge-${s.tipo}">${tipoLabel(s.tipo)}</span></td>
+      <td class="num">${s.n}</td>
+      <td class="num">${fmt(s.medianHosp,0)} d</td>
+      <td class="num">${fmt(s.medianServ,0)} d</td>
+      <td class="num">${pctBadge(s.pct30)}</td>
+      <td class="num">${pct10Badge(s.pct10)}</td>
+    </tr>`).join('');
+
+  const diagRows = data.diagnoses.map(d => `
+    <tr>
+      <td>${esc(d.name)}</td>
+      <td class="num">${d.n}</td>
+      <td class="num">${fmt(d.medianHosp,0)} d</td>
+      <td class="num">${fmt(d.medianServ,0)} d</td>
+      <td class="num">${pctBadge(d.pct30)}</td>
+      <td class="num">${pct10Badge(d.pct10)}</td>
+    </tr>`).join('');
+
+  const chartLabels = JSON.stringify(data.services.map(s => s.name));
+  const chartData   = JSON.stringify(data.services.map(s => s.n));
+  const chartColors = JSON.stringify(data.services.map(s => tipoColor(s.tipo)));
+  const aspectRatio = Math.max(1.2, 4 - data.services.length * 0.1);
+
+  return `<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reporte Hospitalizados ${esc(data.date)} — HSJ</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Public+Sans:ital,wght@0,300..800;1,400..700&family=JetBrains+Mono:wght@400..700&display=swap" rel="stylesheet">
+<style>
+:root{--chsj-blue:#0061BE;--chsj-red:#E51D2F;--blue-50:#EFF5FC;--blue-800:#034485;--red-700:#C21422;--ink-50:#F7F8FB;--ink-100:#EEF1F6;--ink-200:#DCE2EC;--ink-700:#364052;--ink-900:#131A28;--ok:#1F8A5B;--ok-bg:#E5F4ED;--warn:#B8770E;--warn-bg:#FBF1DC;--danger-bg:#FBE3E5;--info-bg:#EFF5FC;--bg:#fff;--fg:#131A28;--fg-3:#6B7689;--border:#DCE2EC;--radius-3:12px;--radius-pill:999px;--shadow-1:0 1px 2px rgba(7,22,50,.04),0 1px 1px rgba(7,22,50,.03);--font-display:"Bricolage Grotesque",system-ui,sans-serif;--font-sans:"Public Sans",system-ui,sans-serif;--font-mono:"JetBrains Mono",monospace}
+*,*::before,*::after{box-sizing:border-box}html,body{margin:0;padding:0;font-family:var(--font-sans);font-size:16px;color:var(--fg);background:var(--bg);-webkit-font-smoothing:antialiased}
+#app-header{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.9);backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:12px}
+.header-logo{width:36px;height:36px;flex-shrink:0}
+.header-title{font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--fg);line-height:1.2}
+.header-badge{margin-left:auto;background:var(--blue-50);color:var(--blue-800);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:var(--radius-pill)}
+#report-main{max-width:1280px;margin:0 auto;padding:32px 24px 80px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:32px}
+.kpi-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-3);padding:20px;box-shadow:var(--shadow-1)}
+.kpi-eyebrow{font-size:11px;letter-spacing:.10em;text-transform:uppercase;font-weight:600;color:var(--fg-3);margin:0 0 8px}
+.kpi-value{font-family:var(--font-display);font-size:40px;font-weight:600;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:0 0 4px;color:var(--chsj-blue)}
+.kpi-value.red{color:var(--chsj-red)}.kpi-value.dark{color:var(--fg)}.kpi-unit{font-size:20px;font-weight:400;color:var(--fg-3)}
+.kpi-label{font-size:13px;color:var(--fg-3);margin:0}
+.sec-title{font-family:var(--font-display);font-size:15px;font-weight:600;color:var(--fg);margin:0}
+.section-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-3);box-shadow:var(--shadow-1);overflow:hidden;margin-bottom:20px}
+.section-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.chart-wrap{padding:20px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+thead th{font-size:11px;letter-spacing:.10em;text-transform:uppercase;font-weight:600;color:var(--fg-3);background:var(--ink-50);border-bottom:1.5px solid var(--ink-200);padding:9px 12px;text-align:left;white-space:nowrap}
+thead th.num{text-align:right}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--fg);vertical-align:middle}
+tbody td.num{text-align:right;font-family:var(--font-mono)}
+tbody tr:last-child td{border-bottom:none}tbody tr:hover td{background:var(--ink-50)}
+.badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:var(--radius-pill);display:inline-block;white-space:nowrap}
+.badge-critica{background:var(--info-bg);color:var(--blue-800)}.badge-materno{background:var(--ok-bg);color:var(--ok)}.badge-general{background:var(--ink-100);color:var(--ink-700)}
+.badge-ok{background:var(--ok-bg);color:var(--ok)}.badge-warn{background:var(--warn-bg);color:var(--warn)}.badge-danger{background:var(--danger-bg);color:var(--red-700)}
+.h2-section{font-family:var(--font-display);font-size:15px;font-weight:600;color:var(--fg);margin:0 0 16px}
+#app-footer{background:var(--ink-900);color:rgba(255,255,255,.6);text-align:center;font-size:12px;padding:16px 24px;letter-spacing:.04em}
+#app-footer strong{color:rgba(255,255,255,.9)}
+</style>
+</head>
+<body>
+<header id="app-header">
+  <img class="header-logo" src="data:image/png;base64,${LOGO_B64}" alt="Logo HSJ">
+  <div class="header-title">Reporte casos hospitalizados al ${esc(data.date)}</div>
+  <span class="header-badge">HSJ</span>
+</header>
+<main id="report-main">
+  <div class="kpi-grid">
+    <div class="kpi-card"><p class="kpi-eyebrow">N° Casos hospitalizados</p><p class="kpi-value dark">${g.n}</p><p class="kpi-label">Pacientes en cama hoy</p></div>
+    <div class="kpi-card"><p class="kpi-eyebrow">Mediana estadía hospital</p><p class="kpi-value">${fmt(g.medianHosp,0)}<span class="kpi-unit"> días</span></p><p class="kpi-label">Desde ingreso hospitalario</p></div>
+    <div class="kpi-card"><p class="kpi-eyebrow">Mediana estadía servicio</p><p class="kpi-value">${fmt(g.medianServ,0)}<span class="kpi-unit"> días</span></p><p class="kpi-label">En el servicio actual</p></div>
+    <div class="kpi-card"><p class="kpi-eyebrow">Estadía &gt; 30 días</p><p class="kpi-value${(g.pct30||0)>15?' red':''}">${fmtPct(g.pct30)}</p><p class="kpi-label">Del total de casos</p></div>
+    <div class="kpi-card"><p class="kpi-eyebrow">Estadía &gt; 10 días</p><p class="kpi-value${(g.pct10||0)>40?' red':''}">${fmtPct(g.pct10)}</p><p class="kpi-label">Del total de casos</p></div>
+  </div>
+
+  <h2 class="h2-section">Por Servicio</h2>
+  <div class="section-card">
+    <div class="section-header">
+      <span class="sec-title">Distribución por servicio</span>
+      <span style="font-size:11px;color:var(--fg-3);margin-left:auto"><span style="color:#0061BE">■</span> Cama General &nbsp;·&nbsp; <span style="color:#E51D2F">■</span> Cama Crítica &nbsp;·&nbsp; <span style="color:#1F8A5B">■</span> Materno Fetal</span>
+    </div>
+    <div class="chart-wrap"><canvas id="chart-exp"></canvas></div>
+  </div>
+  <div class="section-card">
+    <div class="section-header"><span class="sec-title">Indicadores por servicio</span></div>
+    <div class="table-wrap">
+      <table><thead><tr>
+        <th>Servicio</th><th>Tipo</th>
+        <th class="num">N° casos</th>
+        <th class="num">Med. estadía hosp.</th>
+        <th class="num">Med. estadía serv.</th>
+        <th class="num">% &gt; 30 días</th>
+        <th class="num">% &gt; 10 días</th>
+      </tr></thead><tbody>${svcRows}</tbody></table>
+    </div>
+  </div>
+
+  <h2 class="h2-section" style="margin-top:32px">Por Diagnóstico Principal</h2>
+  <div class="section-card" style="margin-bottom:0">
+    <div class="section-header">
+      <span class="sec-title">Indicadores por diagnóstico principal</span>
+      <span style="font-size:12px;color:var(--fg-3);margin-left:auto">Top 10 + Otros</span>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr>
+        <th>Diagnóstico</th>
+        <th class="num">N° casos</th>
+        <th class="num">Med. estadía hosp.</th>
+        <th class="num">Med. estadía serv.</th>
+        <th class="num">% &gt; 30 días</th>
+        <th class="num">% &gt; 10 días</th>
+      </tr></thead><tbody>${diagRows}</tbody></table>
+    </div>
+  </div>
+</main>
+<footer id="app-footer"><strong>Gestión Clínica</strong> — Hospital San José</footer>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"><\/script>
+<script>
+new Chart(document.getElementById('chart-exp').getContext('2d'),{
+  type:'bar',
+  data:{labels:${chartLabels},datasets:[{data:${chartData},backgroundColor:${chartColors},borderRadius:4,borderSkipped:false}]},
+  options:{indexAxis:'y',responsive:true,maintainAspectRatio:true,aspectRatio:${aspectRatio},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.raw+' casos'}}},
+    scales:{x:{beginAtZero:true,grid:{color:'#EEF1F6'},ticks:{font:{family:"'JetBrains Mono'",size:11},color:'#6B7689'}},
+      y:{grid:{display:false},ticks:{font:{family:"'Public Sans'",size:12},color:'#364052'}}}}
+});
+<\/script>
+</body></html>`;
+}
+</script>
+</body>
+</html>
